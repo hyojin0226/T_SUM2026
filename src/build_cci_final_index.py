@@ -14,18 +14,22 @@ OUTPUT_DIR = BASE_DIR / "data" / "output"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 IVI_PATH = PROCESSED_DIR / "ivi_social_isolation_2021.csv"
-CDI_PATH = PROCESSED_DIR / "cdi_by_dong_2021_aligned.csv"
-RII_PATH = PROCESSED_DIR / "rii_by_dong_2021.csv"
-RII_GPKG_PATH = PROCESSED_DIR / "rii_by_dong_2021.gpkg"
+CDI_PATH = PROCESSED_DIR / "cdi_by_dong_2021_v2.csv"   # 재설계 CDI (고령자 기준 정규화 + 로그변환)
+RII_PATH = PROCESSED_DIR / "rii_by_dong_2021_v2.csv"       # 공간 이질성 변수 추가 버전 (불투수면+DEM)
+RII_GPKG_PATH = PROCESSED_DIR / "rii_by_dong_2021_v2.gpkg"
 
 OUT_FINAL_CSV = OUTPUT_DIR / "final_crisis_index_by_dong_2021.csv"
 OUT_TOP_CSV = OUTPUT_DIR / "top_risk_dongs_2021.csv"
 OUT_FINAL_GPKG = OUTPUT_DIR / "final_crisis_index_by_dong_2021.gpkg"
 
+# 가중치 근거 (AHP 기반 우선순위 반영):
+#   IVI 0.40 — 프로젝트 핵심 대상(고령 1인가구 사회적 고립)이 주제 전면에 있음
+#   RII 0.35 — "비가 오면"이라는 강우 맥락이 제목에 명시되어 있어 두 번째 우선순위
+#   CDI 0.25 — 강우 시 이동 불가로 인프라 부족이 위기를 증폭하는 보조 요인
 WEIGHTS = {
-    "IVI": 1 / 3,
-    "CDI": 1 / 3,
-    "RII": 1 / 3,
+    "IVI": 0.40,
+    "CDI": 0.25,
+    "RII": 0.35,
 }
 
 IVI_CANDIDATES = ["IVI", "ivi", "social_isolation_index", "isolation_index"]
