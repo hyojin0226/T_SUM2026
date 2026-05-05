@@ -13,7 +13,7 @@ PROCESSED_DIR = BASE_DIR / "data" / "processed"
 OUTPUT_DIR = BASE_DIR / "data" / "output"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-IVI_PATH = PROCESSED_DIR / "ivi_social_isolation_2021.csv"
+IVI_PATH = PROCESSED_DIR / "ivi_social_isolation_2021_v2.csv"  # 돌봄 인프라 보정 포함 (IVI_v2)
 CDI_PATH = PROCESSED_DIR / "cdi_by_dong_2021_v2.csv"   # 재설계 CDI (고령자 기준 정규화 + 로그변환)
 RII_PATH = PROCESSED_DIR / "rii_by_dong_2021_v2.csv"       # 공간 이질성 변수 추가 버전 (불투수면+DEM)
 RII_GPKG_PATH = PROCESSED_DIR / "rii_by_dong_2021_v2.gpkg"
@@ -147,6 +147,15 @@ def prepare_ivi_to_rii_codes(ivi_raw: pd.DataFrame, rii: pd.DataFrame) -> pd.Dat
         ivi_agg["elderly_ratio_score"] = minmax_scale(ivi_agg["elderly_ratio"])
         ivi_agg["elderly_alone_score"] = minmax_scale(ivi_agg["elderly_alone_ratio"])
         ivi_agg["IVI"] = ivi_agg[["elderly_ratio_score", "elderly_alone_score"]].mean(axis=1)
+
+        # IVI_v2가 있으면 (돌봄 인프라 보정 포함 버전) 우선 사용
+        if "IVI_v2" in ivi.columns:
+            v2_lookup = ivi[["자치구명", "행정동명", "IVI_v2", "care_shortage_score"]].drop_duplicates(
+                subset=["자치구명", "행정동명"]
+            )
+            ivi_agg = ivi_agg.merge(v2_lookup, on=["자치구명", "행정동명"], how="left")
+            ivi_agg["IVI"] = ivi_agg["IVI_v2"].fillna(ivi_agg["IVI"])
+            print("[IVI v2 적용] 돌봄 인프라 보정 IVI_v2를 사용합니다.")
 
     rii_template = clean_admin_names(rii[["기준연도", "자치구명", "행정동명", "행정동코드"]].copy())
     rii_template["행정동코드"] = normalize_code(rii_template["행정동코드"])
